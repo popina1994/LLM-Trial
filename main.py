@@ -10,29 +10,29 @@ import torch
 import torch.nn.functional as F
 import torchtext
 
+
 import transformers
 from transformers import DistilBertTokenizerFast
 from transformers import DistilBertForSequenceClassification
 
 
-
 class IMDbDataset(torch.utils.data.Dataset):
-  def __init__(self, encodings, labels):
-    self.encodings = encodings
-    self.labels = labels
+    def __init__(self, encodings, labels):
+        self.encodings = encodings
+        self.labels = labels
 
-  def __getitem__(self, idx):
+    def __getitem__(self, idx):
+        '''
+        encoding.items() ->
+        -> input_ids : [1,34, 32, 67,...]
+        -> attention_mask : [1,1,1,1,1,....]
     '''
-    encoding.items() ->
-      -> input_ids : [1,34, 32, 67,...]
-      -> attention_mask : [1,1,1,1,1,....]
-    '''
-    item = {key:torch.tensor(val[idx]) for key, val in self.encodings.items()}
-    item['labels'] = torch.tensor(self.labels[idx])
-    return item
+        item = {key:torch.tensor(val[idx]) for key, val in self.encodings.items()}
+        item['labels'] = torch.tensor(self.labels[idx])
+        return item
 
-  def __len__(self):
-    return len((self.labels))
+    def __len__(self):
+        return len((self.labels))
 
 
 def download_data():
@@ -93,6 +93,7 @@ if __name__ == '__main__':
     torch.manual_seed(RANDOM_SEED)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     N_EPOCHS = 3
+    print(torch.cuda.is_available())
 
     (train_encodings, train_labels, valid_encodings, valid_labels, test_encodings, test_labels) = download_data()
 
@@ -115,45 +116,45 @@ if __name__ == '__main__':
     valid_loader = torch.utils.data.DataLoader(valid_dataset, batch_size=bs, shuffle=bs)
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=bs, shuffle=bs)
 
-    start_time = time.time()
-
-    for epoch in range(N_EPOCHS):
-        model.train()
-
-        for batch_idx, batch in enumerate(train_loader):
-
-            ## prepare data
-            input_ids = batch['input_ids'].to(device)
-            attention_mask = batch['attention_mask'].to(device)
-            labels = batch['labels'].to(device)
-
-            ## forward pass
-            outputs = model(input_ids, attention_mask=attention_mask, labels=labels)
-            loss, logits = outputs['loss'], outputs['logits']
-
-            ## backward pass
-            optim.zero_grad()
-            loss.backward()
-            optim.step()
-
-            ## logging
-            if not batch_idx % 250:
-                print(f'Epoch : {epoch + 1}/{N_EPOCHS:04d}'
-                      f' | Batch'
-                      f'{batch_idx:04d}/'
-                      f'{len(train_loader):04d} |'
-                      f'Loss: {loss:.4f}')
-
-            model.eval()
-
-            with torch.set_grad_enabled(False):
-                print(f'Training accuracy: '
-                      f'{compute_accuracy(model, train_loader, device):.2f}%'
-                      f'\nValid accuracy: '
-                      f'{compute_accuracy(model, valid_loader, device):.2f}%')
-
-        print(f'Time elapsed: {(time.time() - start_time) / 60:.2f} min')
-    print(f'Total Training Time: {(time.time() - start_time) / 60:.2f} min')
+    # start_time = time.time()
+    #
+    # for epoch in range(N_EPOCHS):
+    #     model.train()
+    #
+    #     for batch_idx, batch in enumerate(train_loader):
+    #
+    #         ## prepare data
+    #         input_ids = batch['input_ids'].to(device)
+    #         attention_mask = batch['attention_mask'].to(device)
+    #         labels = batch['labels'].to(device)
+    #
+    #         ## forward pass
+    #         outputs = model(input_ids, attention_mask=attention_mask, labels=labels)
+    #         loss, logits = outputs['loss'], outputs['logits']
+    #
+    #         ## backward pass
+    #         optim.zero_grad()
+    #         loss.backward()
+    #         optim.step()
+    #
+    #         ## logging
+    #         if not batch_idx % 250:
+    #             print(f'Epoch : {epoch + 1}/{N_EPOCHS:04d}'
+    #                   f' | Batch'
+    #                   f'{batch_idx:04d}/'
+    #                   f'{len(train_loader):04d} |'
+    #                   f'Loss: {loss:.4f}')
+    #
+    #         model.eval()
+    #
+    #         with torch.set_grad_enabled(False):
+    #             print(f'Training accuracy: '
+    #                   f'{compute_accuracy(model, train_loader, device):.2f}%'
+    #                   f'\nValid accuracy: '
+    #                   f'{compute_accuracy(model, valid_loader, device):.2f}%')
+    #
+    #     print(f'Time elapsed: {(time.time() - start_time) / 60:.2f} min')
+    # print(f'Total Training Time: {(time.time() - start_time) / 60:.2f} min')
     print(f'Test Accuracy: {compute_accuracy(model, test_loader, device):.2f}%')
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
